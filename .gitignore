@@ -1,0 +1,7 @@
+# Environment & Secrets
+# Bloqueia qualquer arquivo .env em qualquer pasta do projeto (raiz ou subpastas)
+.env
+.env.*
+
+# Abre a exceção para qualquer .env.example do projeto
+!.env.example
