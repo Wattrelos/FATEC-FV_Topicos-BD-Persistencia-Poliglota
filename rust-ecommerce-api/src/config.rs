@@ -21,7 +21,7 @@ impl AppConfig {
             let pass = env::var("DB_PASSWORD").unwrap_or_default();
             let host = env::var("DB_HOSTNAME").unwrap_or_else(|_| "127.0.0.1".to_string());
             let port = env::var("DB_PORT").unwrap_or_else(|_| "3306".to_string());
-            let db = env::var("DB_DATABASE").unwrap_or_else(|_| "agsc_product_variation".to_string());
+            let db = env::var("DB_DATABASE").unwrap_or_else(|_| "store_management".to_string());
 
             if pass.is_empty() {
                 format!("mysql://{user}@{host}:{port}/{db}")
