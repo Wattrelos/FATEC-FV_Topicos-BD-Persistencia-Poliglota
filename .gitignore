@@ -1,7 +1,75 @@
-# Environment & Secrets
-# Bloqueia qualquer arquivo .env em qualquer pasta do projeto (raiz ou subpastas)
+# ==============================================================================
+# Rust & Cargo Build Artifacts
+# ==============================================================================
+/target/
+target/
+**/*.rs.bk
+*.bk
+Cargo.lock.backup
+
+# ==============================================================================
+# Environment, Credentials & Secrets
+# ==============================================================================
+# Bloqueia qualquer arquivo .env em qualquer pasta do projeto
 .env
 .env.*
+.env*.local
 
-# Abre a exceção para qualquer .env.example do projeto
+# Abre exceção expressa para os modelos de exemplo
 !.env.example
+!.env.*.example
+
+# ==============================================================================
+# Database & Migrations Cache
+# ==============================================================================
+# Dados locais e arquivos temporários de SQLite / SQLx offline prepare cache (se aplicável)
+# .sqlx/ # Descomente se optar por não commitar o cache offline de checagem do SQLx
+*.db
+*.db-journal
+
+# ==============================================================================
+# Build & Release Artifacts
+# ==============================================================================
+dist/
+release/
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+
+# ==============================================================================
+# Documentos Reservados & Rascunhos
+# ==============================================================================
+# docs/legal/ # Atenção: Remova o '#' caso torne este repositório público!
+scratch/
+backend/scratch/
+readme_backup/
+.joplin_export/
+docs/joplin/*
+
+# ==============================================================================
+# Ferramentas de Teste, Playwright & Frontend Assets
+# ==============================================================================
+node_modules/
+scripts/bin/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# ==============================================================================
+# IDEs, Editores & Configurações de Agentes de IA
+# ==============================================================================
+# .agents/ e .gemini/ versionam as skills e governança de continuidade da equipe
+.aiexclude
+.vscode/
+.idea/
+*.swp
+*.log
+.DS_Store
+Thumbs.db
+
+# Symlinks de Assets de Mídia Local
+public/image
+

@@ -1,0 +1,265 @@
+@startfiles
+.
+├── Cargo.toml                                     # 📦 Manifesto Raiz do Cargo Workspace (Multi-Crate)
+├── Cargo.lock                                     # 🔒 Bloqueio de versões exatas e árvores de dependências
+├── rust-toolchain.toml                            # 🦀 Versão fixa do compilador Rust (MSRV) e componentes
+├── .cargo/                                        # ⚙️ Configurações locais do compilador Cargo
+│   └── config.toml                                # 🚀 Flags de otimização, target e aliases de comando
+├── .env.example                                   # 📋 Template de variáveis de ambiente (DB, Redis, JWT, Gateways)
+├── README.md                                      # 📖 Documentação introdutória e guia de inicialização
+│
+├── apps/                                          # 🚀 Binários Executáveis da Solução (Aplicações)
+│   │
+│   ├── api/                                       # 🌐 Servidor HTTP RESTful Headless (Axum / Tokio)
+│   │   ├── Cargo.toml                             # 📦 Dependências do servidor (Axum, Tower, Tokio, Tracing)
+│   │   └── src/                                   # 🏛️ Código-fonte do binário HTTP
+│   │       ├── main.rs                            # 🚀 Ponto de entrada (Inicialização do Tokio Runtime e Axum)
+│   │       ├── state.rs                           # 🧬 AppState compartilhado (Pools, Cache, Services via Arc)
+│   │       ├── config/                            # ⚙️ Carregamento de configurações tipadas da API
+│   │       │   ├── mod.rs
+│   │       │   └── server_config.rs               # ⚙️ Porta, host, CORS, limites e timeouts
+│   │       ├── extractors/                        # 🔍 Extratores customizados do Axum
+│   │       │   ├── mod.rs
+│   │       │   ├── auth_user.rs                   # 🛡️ Extrator de Claims / Identidade JWT autenticada
+│   │       │   └── validated_json.rs              # 📋 Extrator de JSON com validação semântica automática
+│   │       ├── middlewares/                       # 🧱 Middlewares Tower / Axum
+│   │       │   ├── mod.rs
+│   │       │   ├── auth.rs                        # 🛡️ Guard de autorização e verificação de tokens
+│   │       │   ├── rate_limit.rs                  # 🚦 Limitador de requisições por IP / API Key
+│   │       │   └── trace.rs                       # 📊 Tracing distribuído e métricas de requisição
+│   │       └── routes/                            # 🚦 Roteadores modulares da API REST
+│   │           ├── mod.rs                         # 🔀 Agregação e montagem do roteador principal
+│   │           ├── storefront/                    # 🛍️ Endpoints da Loja Virtual (Catálogo, Carrinho, Checkout)
+│   │           │   ├── mod.rs
+│   │           │   ├── catalog_handlers.rs
+│   │           │   ├── cart_handlers.rs
+│   │           │   └── checkout_handlers.rs
+│   │           ├── admin/                         # 🛡️ Endpoints do Painel Administrativo (Gestão, CRM, Vendas)
+│   │           │   ├── mod.rs
+│   │           │   ├── catalog_admin_handlers.rs
+│   │           │   ├── sales_admin_handlers.rs
+│   │           │   └── users_admin_handlers.rs
+│   │           ├── pos/                           # 🛒 Endpoints do Ponto de Venda (PDV / Caixa / Balcão)
+│   │           │   ├── mod.rs
+│   │           │   ├── cashier_handlers.rs
+│   │           │   └── pre_sale_handlers.rs
+│   │           └── health.rs                      # 💓 Endpoints de Liveness, Readiness e Métricas Prometheus
+│   │
+│   ├── workers/                                   # ⚙️ Consumidor de Filas e Processamento em Segundo Plano
+│   │   ├── Cargo.toml                             # 📦 Dependências do worker (Lapin/RabbitMQ, Tokio, Cron)
+│   │   └── src/
+│   │       ├── main.rs                            # 🚀 Ponto de entrada do consumidor assíncrono
+│   │       ├── consumers/                         # 📬 Consumidores de filas de mensageria
+│   │       │   ├── mod.rs
+│   │       │   ├── order_placed_consumer.rs       # 🧾 Processamento assíncrono de pedidos
+│   │       │   └── fiscal_invoice_consumer.rs     # 🧾 Emissão e transmissão de NFC-e em background
+│   │       └── tasks/                             # ⏰ Tarefas agendadas e rotinas batch
+│   │           ├── mod.rs
+│   │           └── stock_sync_task.rs             # 🔄 Sincronização periódica de estoque
+│   │
+│   └── cli/                                       # 🛠️ Utilitário de Linha de Comando (Administração e Setup)
+│       ├── Cargo.toml                             # 📦 Dependências da CLI (Clap, Tracing)
+│       └── src/
+│           ├── main.rs                            # 🚀 Ponto de entrada com parser de comandos CLI
+│           └── commands/                          # ⌨️ Subcomandos (Seeds, Chaves, Reindexação)
+│               ├── mod.rs
+│               ├── seed_db.rs                     # 🗄️ Povoamento inicial do banco
+│               └── create_admin.rs                # 👤 Criação de usuário root/administrador
+│
+├── crates/                                        # 📦 Bibliotecas Internas do Workspace (Clean Architecture / DDD)
+│   │
+│   ├── domain/                                    # 💎 Camada Enterprise (Regras Puras - Zero Dependências de I/O)
+│   │   ├── Cargo.toml                             # 📦 Dependências puras (thiserror, serde, rust_decimal, uuid)
+│   │   └── src/
+│   │       ├── lib.rs                             # 🏛️ Declaração pública de módulos de domínio
+│   │       ├── errors.rs                          # 🏷️ Enum global de erros de domínio (DomainError)
+│   │       │
+│   │       ├── shared/                            # 🌐 Elementos compartilhados entre agregados
+│   │       │   ├── mod.rs
+│   │       │   ├── enums/                         # 🏷️ Enumerações de status, tipos e estados
+│   │       │   │   ├── mod.rs
+│   │       │   │   ├── order_status.rs
+│   │       │   │   └── payment_status.rs
+│   │       │   ├── events/                        # 📣 Trait e eventos fundamentais de domínio
+│   │       │   │   ├── mod.rs
+│   │       │   │   └── domain_event.rs
+│   │       │   └── value_objects/                 # 💎 Objetos de Valor Imutáveis e Validados
+│   │       │       ├── mod.rs
+│   │       │       ├── money.rs                   # 💰 Valor monetário exato (RustDecimal)
+│   │       │       ├── email.rs                   # ✉️ Email com garantia de validação
+│   │       │       ├── cpf_cnpj.rs                # 🇧🇷 Documento fiscal brasileiro validado
+│   │       │       └── address.rs                 # 📍 Endereço completo imutável
+│   │       │
+│   │       ├── catalog/                           # 📦 Bounded Context: Catálogo de Produtos
+│   │       │   ├── mod.rs
+│   │       │   ├── entities/                      # 🏛️ Structs de Entidades (Product, Category, Manufacturer)
+│   │       │   ├── events/                        # 📣 Eventos (ProductPriceChanged, StockDepleted)
+│   │       │   └── repositories/                  # 📜 Traits assíncronas (ProductRepository, CategoryRepository)
+│   │       │
+│   │       ├── customer/                          # 👤 Bounded Context: Clientes e CRM
+│   │       │   ├── mod.rs
+│   │       │   ├── entities/                      # 🏛️ Entidades (Customer, CustomerAddress)
+│   │       │   └── repositories/                  # 📜 Traits (CustomerRepository)
+│   │       │
+│   │       ├── order/                             # 🧾 Bounded Context: Vendas e Pedidos
+│   │       │   ├── mod.rs
+│   │       │   ├── entities/                      # 🏛️ Entidades (OrderItem, OrderHistory)
+│   │       │   ├── aggregates/                    # 🧱 Raiz de Agregação (OrderAggregate)
+│   │       │   ├── events/                        # 📣 Eventos (OrderCreated, OrderCancelled)
+│   │       │   └── repositories/                  # 📜 Traits (OrderRepository)
+│   │       │
+│   │       ├── cart/                              # 🛒 Bounded Context: Carrinho de Compras
+│   │       │   ├── mod.rs
+│   │       │   ├── entities/                      # 🏛️ Entidades (Cart, CartItem)
+│   │       │   └── repositories/                  # 📜 Traits (CartRepository)
+│   │       │
+│   │       ├── pos/                               # 🏪 Bounded Context: Ponto de Venda
+│   │       │   ├── mod.rs
+│   │       │   ├── entities/                      # 🏛️ Entidades (PreSale, CashRegister, SaleSession)
+│   │       │   └── repositories/                  # 📜 Traits (PreSaleRepository)
+│   │       │
+│   │       ├── procurement/                       # 🚛 Bounded Context: Compras e Fornecedores
+│   │       │   ├── mod.rs
+│   │       │   ├── entities/                      # 🏛️ Entidades (Supplier, PurchaseOrder)
+│   │       │   └── repositories/                  # 📜 Traits (SupplierRepository)
+│   │       │
+│   │       └── security/                          # 🔐 Bounded Context: Acesso e Permissões (RBAC)
+│   │           ├── mod.rs
+│   │           ├── entities/                      # 🏛️ Entidades (AdminUser, Role, Permission)
+│   │           └── repositories/                  # 📜 Traits (UserRepository)
+│   │
+│   ├── application/                               # 💼 Camada de Aplicação (Casos de Uso e Orquestração)
+│   │   ├── Cargo.toml                             # 📦 Depende de: domain, async-trait, validator, serde
+│   │   └── src/
+│   │       ├── lib.rs                             # 🏛️ Declaração pública dos casos de uso e DTOs
+│   │       ├── errors.rs                          # 🏷️ Enum de erros de aplicação (ApplicationError)
+│   │       │
+│   │       ├── ports/                             # 🔌 Interfaces/Traits de saída para serviços externos
+│   │       │   ├── mod.rs
+│   │       │   ├── payment_gateway.rs             # 💳 Contrato para Gateways de Pagamento
+│   │       │   ├── shipping_gateway.rs            # 🚚 Contrato para Cálculo de Frete e Rastreio
+│   │       │   ├── fiscal_gateway.rs              # 🧾 Contrato para Emissão de Notas (NFC-e)
+│   │       │   ├── event_publisher.rs             # 📬 Contrato para publicação de eventos (MessageBus)
+│   │       │   └── cache_service.rs               # ⚡ Contrato para operações de cache
+│   │       │
+│   │       ├── catalog/                           # 📦 Casos de Uso do Catálogo
+│   │       │   ├── mod.rs
+│   │       │   ├── dtos/                          # 📋 DTOs de Entrada e Saída (SearchCatalogDto, ProductResponseDto)
+│   │       │   └── use_cases/                     # ⚙️ Structs de UseCase (SearchCatalogUseCase, GetProductDetailsUseCase)
+│   │       │
+│   │       ├── customer/                          # 👤 Casos de Uso de Clientes
+│   │       │   ├── mod.rs
+│   │       │   ├── dtos/                          # 📋 DTOs (RegisterCustomerDto, UpdateAddressDto)
+│   │       │   └── use_cases/                     # ⚙️ Structs de UseCase (RegisterCustomerUseCase, AuthenticateCustomerUseCase)
+│   │       │
+│   │       ├── order/                             # 🧾 Casos de Uso de Pedidos
+│   │       │   ├── mod.rs
+│   │       │   ├── dtos/                          # 📋 DTOs (CheckoutDto, OrderSummaryDto)
+│   │       │   └── use_cases/                     # ⚙️ Structs de UseCase (ProcessCheckoutUseCase, CancelOrderUseCase)
+│   │       │
+│   │       └── pos/                               # 🏪 Casos de Uso de PDV
+│   │           ├── mod.rs
+│   │           ├── dtos/                          # 📋 DTOs (CreatePreSaleDto, FinalizeSaleDto)
+│   │           └── use_cases/                     # ⚙️ Structs de UseCase (EmitPreSaleTicketUseCase, FinalizeSaleUseCase)
+│   │
+│   └── infrastructure/                            # 🔌 Camada de Infraestrutura e Adaptadores Concretos
+│       ├── Cargo.toml                             # 📦 Depende de: domain, application, sqlx, redis, lapin, reqwest, argon2
+│       └── src/
+│           ├── lib.rs                             # 🏛️ Declaração pública de adaptadores e repositórios
+│           │
+│           ├── persistence/                       # 🗄️ Acesso a Dados Relacionais via SQLx Assíncrono
+│           │   ├── mod.rs
+│           │   ├── connection.rs                  # 🔌 Pool de conexões assíncrono (sqlx::MySqlPool)
+│           │   ├── models/                        # 🗄️ Structs mapeadas diretamente das tabelas do banco
+│           │   ├── mappers/                       # 🗺️ Mappers bidirecionais (From/Into: SQL Models ⇄ Domain Entities)
+│           │   ├── repositories/                  # 🗃️ Implementação dos traits de repositório via SQLx
+│           │   │   ├── mod.rs
+│           │   │   ├── product_repository_impl.rs
+│           │   │   ├── order_repository_impl.rs
+│           │   │   └── customer_repository_impl.rs
+│           │   └── unit_of_work.rs                # 🔄 Gerenciamento de transações atômicas (sqlx::Transaction)
+│           │
+│           ├── cache/                             # ⚡ Adaptadores de Cache (Redis Assíncrono)
+│           │   ├── mod.rs
+│           │   └── redis_cache.rs                 # ⚡ Implementação da trait CacheService
+│           │
+│           ├── messaging/                         # 📬 Mensageria e Filas Assíncronas (RabbitMQ / Lapin)
+│           │   ├── mod.rs
+│           │   ├── rabbitmq_publisher.rs          # 📣 Publicação de mensagens em Exchanges
+│           │   └── rabbitmq_connection.rs         # 🔌 Gerenciamento de conexão AMQP com reconexão
+│           │
+│           ├── security/                          # 🛡️ Criptografia, Hash e Segurança de Tokens
+│           │   ├── mod.rs
+│           │   ├── password_hasher.rs             # 🔑 Implementação Argon2id (segurança máxima)
+│           │   └── jwt_provider.rs                # 🎫 Geração, decodificação e validação de tokens JWT
+│           │
+│           └── gateways/                          # 🌐 Integração com Provedores e Gateways Externos
+│               ├── mod.rs
+│               ├── payments/                      # 💳 Adaptadores de Pagamento (Reqwest HTTP Clientes)
+│               │   ├── mod.rs
+│               │   ├── stripe_gateway.rs          # 💳 Integração Stripe API v1
+│               │   ├── pix_gateway.rs             # 🇧🇷 Integração com PSPs Pix (Banco Central)
+│               │   └── tef_gateway.rs             # 🏪 Integração com TEF dedicado para PDV
+│               ├── shipping/                      # 🚚 Adaptadores de Frete
+│               │   ├── mod.rs
+│               │   └── correios_gateway.rs        # 📦 Integração Correios / Transportadoras
+│               └── fiscal/                        # 🧾 Adaptador Fiscal NFC-e
+│                   ├── mod.rs
+│                   └── nfce_gateway.rs            # 🧾 Comunicação com SEFAZ / Provedor Fiscal
+│
+# --------------- << Controle de Banco de Dados, Migrações e Seeds >>
+├── database/                                      # 🗄️ Controle e Versionamento do Banco de Dados
+│   ├── migrations/                                # 📂 Scripts SQL de migração nativos (gerenciados por sqlx-cli)
+│   │   ├── 20260927000001_create_catalog.sql      # 📝 Migração incremental de catálogo
+│   │   ├── 20260927000002_create_orders.sql       # 📝 Migração incremental de pedidos
+│   │   └── 20260927000003_create_customers.sql    # 📝 Migração incremental de clientes
+│   ├── seeds/                                     # 📂 Dados sementes de povoamento para desenvolvimento
+│   └── schemas/                                   # 📂 Modelos conceituais e diagramas relacionais EER
+│
+# --------------- << Documentação Unificada do Projeto >>
+├── docs/                                          # 📚 Central Unificada de Documentação do Projeto
+│   ├── architecture/                              # 🏗️ Visão arquitetural, ADRs e diagramas técnicos
+│   │   ├── adr/                                   # 📝 Architecture Decision Records (Registros de Decisões)
+│   │   ├── components/                            # 🧩 Componentes da arquitetura
+│   │   ├── deployment/                            # 🚀 Manuais de deploy e infraestrutura
+│   │   ├── reviews/                               # 📋 Revisões de código e arquitetura
+│   │   └── diagrams/                              # 🗺️ Mapas da estrutura do projeto
+│   │       ├── Directory-Structure.puml           # 🗺️ Este diagrama da árvore de diretórios
+│   │       └── file_structure_diagram.puml        # 🗺️ Mapa detalhado da arquitetura alvo
+│   ├── business/                                  # 💼 Regras de negócio, glossário e processos
+│   │   └── processes/                             # 🔄 Diagramas de processo
+│   ├── database/                                  # 🗄️ Diagramas ER/EER e dicionário de dados
+│   ├── diagrams/                                  # 📊 Diagramas gerais para stakeholders e engenharia
+│   ├── DoD/                                       # 📋 Definition of Done
+│   ├── domain/                                    # 🧩 Domínios de negócio
+│   │   └── roles/                                 # 📜 Papéis (cargos, funções ou atores) do domínio
+│   ├── issues/                                    # 📋 Subpasta para centralização das issues
+│   ├── kb/                                        # 📋 Subpasta para centralização da base de conhecimento
+│   ├── legal/                                     # 📋 Subpasta para pareceres e contratos legais
+│   │   └── labor-opinions/                        # 📋 Laudos e pareceres técnicos
+│   ├── migrations/                                # 📋 Documentação e histórico de planos de migração
+│   ├── requirements/                              # 📋 Requisitos do sistema
+│   │   ├── business-rules/                        # 📋 Regras de negócio detalhadas
+│   │   ├── functional/                            # 📋 Requisitos funcionais
+│   │   └── non-functional/                        # 📋 Requisitos não funcionais
+│   ├── specs/                                     # 📋 Especificações formais da API (OpenAPI 3.1) e BDD
+│   │   ├── features/                              # 🥒 Cenários BDD Gherkin
+│   │   └── schemas/                               # 📐 Schemas JSON / OpenAPI 3.1
+│   └── workflows/                                 # 🔄 Diagramas de sequência e atividade
+│       ├── activity-diagrams/                     # 🔄 Diagramas de atividade
+│       └── sequence-diagrams/                     # 🔄 Diagramas de sequência
+│
+# --------------- << Utilitários de DevOps, Deploy e Automação >>
+├── scripts/                                       # 🛠️ Utilitários de DevOps, Deploy, CI e Manutenção
+│   ├── devops/                                    # 🚢 Scripts de provisionamento, Docker e CI/CD
+│   │   ├── Dockerfile                             # 🐳 Multi-stage build otimizado (cargo-chef + musl/distroless)
+│   │   └── compose.yml                            # 🐳 Orquestração local (MySQL, Redis, RabbitMQ)
+│   └── dev/                                       # 💻 Scripts de automação do ambiente de desenvolvimento
+│       └── setup_db.sh                            # 🗄️ Script de criação e migração automática do banco local
+│
+# --------------- << Testes Automatizados >>
+└── tests/                                         # 🧪 Testes de Integração e E2E Multi-Crate
+    ├── api/                                       # 🌐 Testes de integração de endpoints HTTP (Axum TestClient)
+    ├── database/                                  # 🗄️ Testes de integração de queries e transações SQLx
+    └── e2e/                                       # 🎭 Testes de fluxo ponta a ponta dos serviços
+@endfiles
